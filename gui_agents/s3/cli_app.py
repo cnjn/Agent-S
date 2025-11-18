@@ -22,7 +22,7 @@ paused = False
 
 
 def get_char():
-    """Get a single character from stdin without pressing Enter"""
+    """ 跨平台单字符输入（无需回车）"""
     try:
         # Import termios and tty on Unix-like systems
         if platform.system() in ["Darwin", "Linux"]:
@@ -47,7 +47,7 @@ def get_char():
 
 
 def signal_handler(signum, frame):
-    """Handle Ctrl+C signal for debugging during agent execution"""
+    """处理 Ctrl+C 信号，用于调试期间暂停 agent 执行"""
     global paused
 
     if not paused:
@@ -131,7 +131,7 @@ platform_os = platform.system()
 
 
 def show_permission_dialog(code: str, action_description: str):
-    """Show a platform-specific permission dialog and return True if approved."""
+    """显示平台特定的权限对话框并返回 True 如果批准"""
     if platform.system() == "Darwin":
         result = os.system(
             f'osascript -e \'display dialog "Do you want to execute this action?\n\n{code} which will try to {action_description}" with title "Action Permission" buttons {{"Cancel", "OK"}} default button "OK" cancel button "Cancel"\''

@@ -16,6 +16,13 @@ toml
 black
 pytesseract
 google-genai
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langgraph
 
 # Platform-specific dependencies
 pyobjc; platform_system == "Darwin"
