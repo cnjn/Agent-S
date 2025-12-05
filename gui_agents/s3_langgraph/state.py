@@ -1,17 +1,19 @@
 from dataclasses import dataclass, field
 import os
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Any, Literal, Optional, Required
 from typing_extensions import TypedDict
 from operator import add
 from pydantic import SecretStr
+from langgraph.graph.message import BaseMessage, add_messages, Messages
 
-class Observation(TypedDict, total=False):
+
+class Observation(TypedDict, total=True):
     screenshot_b64: str
-    width: int
-    height: int
+    # width: int
+    # height: int
     captured_at: float  # 时间戳
 
-class ActionPlan(TypedDict, total=False):
+class ActionPlan(TypedDict, total=True):
     rationale: str  
     plan_code: str
     grounded_code: str
@@ -33,13 +35,18 @@ class TurnLog(TypedDict, total=False):
     screenshot_digest: str  # 截图摘要
 
 class AgentState(TypedDict, total=False):
-    instruction: str  # 任务指令
+    instruction: Required[str]  # 任务指令
     env: dict  # platform, screen, permissions
     observation: Observation  # 最新截图
-    plan: Optional[ActionPlan]  # 当前计划
-    reflection: Optional[str]   # 反思
+
+    reflection_messages: Annotated[list[BaseMessage], add_messages]
+    reflection: str   # 反思
+
     code_agent: Optional[CodeAgentState]
+
+    plan: ActionPlan  # 当前计划
     trajectory: Annotated[list[TurnLog], add]  # 历史记录
+
     notes: Annotated[list[str], add]  # 额外笔记
     turn: int   # 当前轮数
     status: Literal["running", "waiting", "done", "fail"]

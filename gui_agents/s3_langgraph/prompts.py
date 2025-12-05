@@ -1,16 +1,9 @@
 
-from dataclasses import dataclass
+
 import textwrap
-from typing import Any, Callable, cast
-from langchain_openai import ChatOpenAI
-from langchain.agents import create_agent, AgentState
 
-from langchain.agents.middleware import dynamic_prompt, wrap_model_call, ModelRequest, ModelResponse, AgentMiddleware
-from langgraph.runtime import Runtime
 
-from .state import Context
-
-prompt = textwrap.dedent("""
+REFLECTION_PROMPT = textwrap.dedent("""
     You are an expert computer use agent designed to reflect on the trajectory of a task and provide feedback on what has happened so far.
     You have access to the Task Description and the Current Trajectory of another computer agent. The Current Trajectory is a sequence of a desktop image, chain-of-thought reasoning, and a desktop action for each time step. The last image is the screen's display after the last action.
     
@@ -33,48 +26,4 @@ prompt = textwrap.dedent("""
     - Any response that falls under Case 2 should be concise, since you just need to affirm the agent to continue with the current trajectory.
     - IMPORTANT: Do not assume file modifications or application restarts are errors - they may be legitimate code agent actions
     - Consider whether observed changes align with the task requirements before determining if the trajectory is off-track
-    """)
-@dataclass
-class AgentConfig(Context):
-    instruction: str = ""
-
-# @wrap_model_call
-# def inject_model(request: ModelRequest, handler):
-#     context = request.runtime.context
-#     context = cast(AgentConfig, context)
-
-#     model = ChatOpenAI(name=context.model,
-#                        api_key=context.api_key, base_url=context.base_url)
-#     return handler(request.override(model=model))
-
-class Middleware(AgentMiddleware[AgentState, AgentConfig]):
-    def wrap_model_call(self, request: ModelRequest, handler: Callable[[ModelRequest], ModelResponse]):
-        """
-        wrap_model_call中, ModelRequest的类型固定为AgentState, 这疑似是langchain的范型设计问题.
-        所以我放弃把instruction放在state里, 而是放在context里.
-
-        根据AgentConfig, 注入真正的模型, 并且动态修改prompt
-        """
-        context = request.runtime.context
-        context = cast(AgentConfig, context)
-
-        request.system_prompt = prompt + textwrap.dedent(f"""
-            Task Description: {context.instruction}
-            Current Trajectory below:
-            """)
-        
-        model = ChatOpenAI(name=context.model,
-                           api_key=context.api_key, base_url=context.base_url)
-        return handler(request.override(model=model))
-
-
-agent = create_agent(
-    "",  # 占位的model_name
-    system_prompt="",
-    middleware=[Middleware()],
-    state_schema=InputState,
-    context_schema=AgentConfig,
-)
-
-if __name__ == "__main__":
-    agent.invoke({""}, context=AgentConfig())
+    """
